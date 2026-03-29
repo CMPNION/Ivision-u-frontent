@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, CheckSquare, ShieldCheck, UserCircle2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  BarChart3,
+  CheckSquare,
+  LogOut,
+  ShieldCheck,
+  UserCircle2,
+} from "lucide-react";
+
+import { logout } from "@/shared/auth/auth-gate";
+import { Button } from "@/shared/ui/button";
 
 type NavItem = {
   label: string;
@@ -23,8 +32,14 @@ const applicantNav: NavItem[] = [
 
 export function Sidebar(): React.JSX.Element {
   const pathname = usePathname();
-  const isApplicant = pathname.startsWith("/applicant");
+  const router = useRouter();
+  const isApplicant = pathname?.startsWith("/applicant") ?? false;
   const navItems = isApplicant ? applicantNav : committeeNav;
+
+  const handleLogout = (): void => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <aside className="hidden h-screen w-72 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
@@ -46,8 +61,8 @@ export function Sidebar(): React.JSX.Element {
           const isActive = isApplicant
             ? item.href === "/applicant"
               ? pathname === "/applicant"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`)
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : pathname === item.href || pathname?.startsWith(`${item.href}/`)
+            : pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
           return (
             <Link
@@ -77,6 +92,17 @@ export function Sidebar(): React.JSX.Element {
           );
         })}
       </nav>
+
+      <div className="border-t border-slate-200 px-4 py-4">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start gap-3 text-slate-600 hover:bg-rose-50 hover:text-rose-600"
+        >
+          <LogOut className="size-4" />
+          <span>Выйти</span>
+        </Button>
+      </div>
     </aside>
   );
 }

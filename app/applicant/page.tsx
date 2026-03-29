@@ -112,15 +112,15 @@ export default function ApplicantPage(): React.JSX.Element {
   }, [ready, session, isApplicant, currentUser, router, pathname]);
 
   if (!ready) {
-    return null;
+    return <></>;
   }
   if (!session || !isApplicant || !currentUser) {
-    return null;
+    return <></>;
   }
 
   const isSubmitDisabled =
     Boolean(currentApplication) &&
-    currentApplication.application.status !== "revoken";
+    currentApplication?.application.status !== "revoken";
   const submitDisabled = hydrated ? isSubmitDisabled : false;
 
   const canRevoke =

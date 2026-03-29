@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 
-import { registerWithApi } from "@/shared/auth/auth-gate";
+import { register } from "@/shared/auth/auth-gate";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -50,9 +50,10 @@ export default function RegisterPage(): React.JSX.Element {
 
     setLoading(true);
     try {
-      await registerWithApi({
+      await register({
         first_name: form.firstName.trim(),
         last_name: form.lastName.trim(),
+        birth_date: "2000-01-01", // Default value, should be added to form
         email: form.email.trim(),
         password: form.password,
         role: "abiturient",

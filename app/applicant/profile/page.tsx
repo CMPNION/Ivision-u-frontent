@@ -43,7 +43,7 @@ export default function ApplicantProfilePage(): React.JSX.Element {
   const { session, ready } = useSessionState();
 
   if (!ready) {
-    return null;
+    return <></>;
   }
 
   if (!session) {

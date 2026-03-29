@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 
-import { loginMock } from "@/shared/auth/auth-gate";
+import { login } from "@/shared/auth/auth-gate";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 
-export default function LoginPage(): React.JSX.Element {
+function LoginForm(): React.JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -49,8 +49,8 @@ export default function LoginPage(): React.JSX.Element {
     setError(null);
     setLoading(true);
     try {
-      const session = loginMock(email.trim(), password);
-      const next = searchParams.get("next");
+      const session = await login(email.trim(), password);
+      const next = searchParams?.get("next");
       const fallback =
         session.role === "committee" ? "/dashboard" : "/applicant";
       router.push(next || fallback);
@@ -157,5 +157,13 @@ export default function LoginPage(): React.JSX.Element {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function LoginPage(): React.JSX.Element {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

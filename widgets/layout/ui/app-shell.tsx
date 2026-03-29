@@ -21,7 +21,7 @@ export function AppShell({
 }): React.JSX.Element {
   const pathname = usePathname();
   const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
+    pathname?.startsWith("/login") || pathname?.startsWith("/register");
 
   const content = (
     <div className="min-h-screen md:grid md:grid-cols-[260px_1fr]">

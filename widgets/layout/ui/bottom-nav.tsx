@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, LayoutDashboard, UserCircle2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, LayoutDashboard, LogOut, UserCircle2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
+import { logout } from "@/shared/auth/auth-gate";
+import { Button } from "@/shared/ui/button";
 
 type NavItem = {
   href: string;
@@ -32,8 +34,14 @@ const isActivePath = (pathname: string, href: string): boolean => {
 
 export function BottomNav(): React.JSX.Element {
   const pathname = usePathname();
-  const isApplicant = pathname.startsWith("/applicant");
+  const router = useRouter();
+  const isApplicant = pathname?.startsWith("/applicant") ?? false;
   const navItems = isApplicant ? applicantNav : committeeNav;
+
+  const handleLogout = (): void => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <nav
@@ -43,11 +51,11 @@ export function BottomNav(): React.JSX.Element {
       <ul
         className="mx-auto grid h-16 max-w-screen-sm"
         style={{
-          gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${navItems.length + 1}, minmax(0, 1fr))`,
         }}
       >
         {navItems.map((item) => {
-          const active = isActivePath(pathname, item.href);
+          const active = isActivePath(pathname || "", item.href);
           const Icon = item.icon;
 
           return (
@@ -73,6 +81,18 @@ export function BottomNav(): React.JSX.Element {
             </li>
           );
         })}
+
+        {/* Logout button */}
+        <li className="h-full border-l border-rose-100">
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-none text-xs font-medium text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Выйти</span>
+          </Button>
+        </li>
       </ul>
     </nav>
   );

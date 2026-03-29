@@ -26,7 +26,7 @@ export default function CommitteeProfilePage(): React.JSX.Element {
   const { session, ready } = useSessionState();
 
   if (!ready) {
-    return null;
+    return <></>;
   }
 
   if (!session) {

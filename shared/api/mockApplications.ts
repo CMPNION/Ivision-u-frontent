@@ -4,6 +4,7 @@ import {
   type ApplicationStatus,
   type Cluster,
   type User,
+  type UserRole,
 } from "@/shared/types/applications";
 
 type NewApplicationInput = {

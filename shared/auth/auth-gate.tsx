@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { UserRole } from "@/shared/types/applications";
-import { getAccountByEmail, mockAccounts } from "@/shared/auth/accounts";
+import { authAPI } from "@/shared/api/client";
 
 type SessionUser = {
   email: string;
@@ -14,43 +14,6 @@ type SessionUser = {
   token?: string;
   refreshToken?: string;
 };
-
-type LoginResponse = {
-  token: string;
-  refresh_token: string;
-  user: {
-    email: string;
-    role: UserRole;
-    first_name?: string;
-    last_name?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-};
-
-type RegisterPayload = {
-  first_name: string;
-  last_name: string;
-  birth_date?: string;
-  email: string;
-  password: string;
-  role: UserRole;
-};
-
-type RegisterResponse = {
-  id: string;
-  email: string;
-  role: UserRole;
-  token: string;
-  refresh_token: string;
-};
-
-export const availableAccounts = mockAccounts.map((account) => ({
-  email: account.email,
-  password: account.password,
-  role: account.role,
-  fullName: `${account.firstName} ${account.lastName}`,
-}));
 
 const STORAGE_KEY = "auth.session";
 
@@ -75,72 +38,63 @@ function clearSession(): void {
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
-function normalizeUser(user: LoginResponse["user"]): SessionUser {
-  return {
-    email: user.email,
-    role: user.role,
-    firstName: user.first_name ?? user.firstName ?? "",
-    lastName: user.last_name ?? user.lastName ?? "",
-  };
-}
-
-export async function loginWithApi(
+export async function login(
   email: string,
   password: string,
 ): Promise<SessionUser> {
-  const response = await fetch("/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
+  try {
+    const { session } = await authAPI.login(email, password);
+    return {
+      email: session.email,
+      role: session.role as UserRole,
+      firstName: session.firstName,
+      lastName: session.lastName,
+      token: session.token,
+      refreshToken: session.refreshToken,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error("Неверный email или пароль");
   }
-
-  const data = (await response.json()) as LoginResponse;
-  const session = normalizeUser(data.user);
-  session.token = data.token;
-  session.refreshToken = data.refresh_token;
-
-  writeSession(session);
-  return session;
 }
 
-export function loginMock(email: string, password: string): SessionUser {
-  const account = getAccountByEmail(email);
-  if (!account || account.password !== password) {
-    throw new Error("Неверный email или пароль");
-  }
-
-  const session: SessionUser = {
-    email: account.email,
-    role: account.role,
-    firstName: account.firstName,
-    lastName: account.lastName,
-  };
-
-  writeSession(session);
-  return session;
-}
-
-export async function registerWithApi(
-  payload: RegisterPayload,
-): Promise<RegisterResponse> {
-  const response = await fetch("/api/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
+export async function register(payload: {
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}): Promise<SessionUser> {
+  try {
+    const { session } = await authAPI.register({
+      first_name: payload.first_name,
+      last_name: payload.last_name,
+      birth_date: payload.birth_date,
+      email: payload.email,
+      password: payload.password,
+      role: payload.role,
+    });
+    return {
+      email: session.email,
+      role: session.role as UserRole,
+      firstName: session.firstName,
+      lastName: session.lastName,
+      token: session.token,
+      refreshToken: session.refreshToken,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error("Не удалось зарегистрировать пользователя");
   }
-
-  return (await response.json()) as RegisterResponse;
 }
 
 export function logout(): void {
+  authAPI.logout();
   clearSession();
 }
 
@@ -148,9 +102,6 @@ type AuthGateProps = {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
   redirectTo?: string;
-  /**
-   * Опциональный fallback, пока идёт проверка сессии.
-   */
   fallback?: React.ReactNode;
 };
 
@@ -185,7 +136,7 @@ export function AuthGate({
   const router = useRouter();
   const pathname = usePathname();
   const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
+    pathname?.startsWith("/login") || pathname?.startsWith("/register");
   const { session, ready } = useSessionState();
 
   if (isAuthPage) {
@@ -202,7 +153,9 @@ export function AuthGate({
     if (isAuthPage || !ready) return;
 
     if (!session) {
-      router.replace(redirectTo + `?next=${encodeURIComponent(pathname)}`);
+      router.replace(
+        `${redirectTo}?next=${encodeURIComponent(pathname || "/")}`,
+      );
       return;
     }
     if (!isRoleAllowed) {
